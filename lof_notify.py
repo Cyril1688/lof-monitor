@@ -136,14 +136,35 @@ def load_history():
 
 
 def save_history(results):
-    """保存本次结果到历史文件"""
+    """保存本次结果到历史文件，并只保留最近7天记录"""
     today = datetime.now().strftime("%Y-%m-%d")
     file_exists = os.path.exists("history.csv")
+
+    # 先追加本次结果
     with open("history.csv", "a", encoding="utf-8") as f:
         if not file_exists:
             f.write("date,code,name,premium\n")
         for code, name, premium in results:
             f.write(f"{today},{code},{name},{premium:.2f}\n")
+
+    # 清理7天前的记录
+    try:
+        cutoff = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+        with open("history.csv", "r", encoding="utf-8") as f:
+            lines = f.readlines()
+        # 保留表头 + 7天内的记录
+        kept = [lines[0]]  # 表头
+        for line in lines[1:]:
+            parts = line.strip().split(",")
+            if len(parts) >= 4 and parts[0] >= cutoff:
+                kept.append(line)
+        with open("history.csv", "w", encoding="utf-8") as f:
+            f.writelines(kept)
+        removed = len(lines) - len(kept)
+        if removed > 0:
+            print(f"  清理历史: 删除 {removed} 条7天前的记录")
+    except Exception as e:
+        print(f"  [WARN] 清理历史记录失败: {e}")
 
 
 def main():
