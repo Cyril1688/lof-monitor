@@ -23,7 +23,7 @@ import time
 from datetime import datetime, timedelta
 
 # ========== 配置区 ==========
-THRESHOLD = 5.0          # 溢价率阈值(%)
+THRESHOLD = 2.0          # 溢价率阈值(%)
 SERVERCHAN_KEY = os.environ.get("SERVERCHAN_KEY", "")
 PUSH_DISCOUNT = False    # 是否推送折价
 REQUEST_DELAY = 0.12     # 请求间隔(秒)
