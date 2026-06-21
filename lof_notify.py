@@ -83,7 +83,7 @@ def get_market_price(fund_code):
         resp = requests.get(url, headers=headers, timeout=10)
         data = resp.json()
         if data.get("data"):
-            price = data["data"].get("f43", 0) / 100.0  # 最新价，单位：分
+            price = data["data"].get("f43", 0) / 1000.0  # 最新价，单位：厘（基金精度到小数点后3位）
             if price > 0:
                 return price
     except Exception as e:
@@ -96,6 +96,18 @@ def calc_premium(nav, market_price):
     if nav is None or market_price is None or nav == 0:
         return None
     return (market_price - nav) / nav * 100.0
+
+
+def validate_price(nav, market_price, code):
+    """校验价格合理性，过滤异常数据"""
+    if nav <= 0 or market_price <= 0:
+        return False
+    # 场内价和净值差异不应超过10倍（极端情况）
+    ratio = max(market_price / nav, nav / market_price)
+    if ratio > 10:
+        print(f"  ⚠ 数据异常: 净值={nav:.4f}, 场内价={market_price:.4f}, 比值={ratio:.1f}x（已跳过）")
+        return False
+    return True
 
 
 def send_serverchan(title, content):
@@ -203,6 +215,11 @@ def main():
             print(f"  ✗ 无法获取场内价格（可能未开盘）")
             continue
         print(f"  场内价: {market_price:.4f}")
+
+        # 校验数据合理性
+        if not validate_price(nav, market_price, code):
+            results.append((code, name, None))  # 记录但标记无效
+            continue
 
         premium = calc_premium(nav, market_price)
         if premium is None:
