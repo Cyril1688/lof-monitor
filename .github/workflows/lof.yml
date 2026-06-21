@@ -1,0 +1,40 @@
+name: LOF溢价监控
+
+on:
+  schedule:
+    - cron: '30 3 * * 1-5'   # 北京时间 11:30（UTC+8 = UTC+0 减 8h，所以 11:30-8=3:30）
+    - cron: '30 7 * * 1-5'   # 北京时间 15:30
+  workflow_dispatch:            # 支持手动触发
+  repository_dispatch:          # 支持外部 API 触发（Cloudflare Worker）
+    types: [manual_trigger]
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 检出仓库
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 配置 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 安装依赖
+        run: pip install requests
+
+      - name: 运行溢价监控
+        env:
+          SERVERCHAN_KEY: ${{ secrets.SERVERCHAN_KEY }}
+        run: python lof_notify.py
+
+      - name: 提交历史数据
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add history.csv || true
+          git diff --cached --quiet || git commit -m "自动更新历史数据 $(date '+%Y-%m-%d %H:%M')"
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
