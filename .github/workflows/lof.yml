@@ -2,7 +2,9 @@ name: LOF溢价监控
 
 on:
   schedule:
-    - cron: '30 6 * * 1-5'   # 北京时间 14:30（UTC+8 = UTC+0 减 8h，所以 14:30-8=6:30）
+    - cron: '0 4 * * 1-5'     # 北京时间 12:00
+    - cron: '30 5 * * 1-5'    # 北京时间 13:30
+    - cron: '30 6 * * 1-5'    # 北京时间 14:30
   workflow_dispatch:            # 支持手动触发
   repository_dispatch:          # 支持外部 API 触发（Cloudflare Worker）
     types: [manual_trigger]
